@@ -24,7 +24,7 @@ implemented yet, so the scanner cannot be used end-to-end yet.
 
 - Xbox 360 Kinect (v1) **with its mains power adapter** (USB alone does not power the sensor)
 - A turntable: anything that spins (a microwave glass plate works)
-- The ArUco sheet printed on A4 at 100% scale
+- The ArUco sheet ([`assets/board.pdf`](assets/board.pdf)) printed on A4 at 100% scale
 - A Linux PC
 
 ## How it works
@@ -88,30 +88,25 @@ sudo apt install -y freenect python3-freenect libfreenect-dev
 For USB access without sudo, add a udev rule for the Kinect devices (vendor `045e`,
 products `02ae`, `02ad`, `02b0`) with `MODE="0666"`.
 
+## Setup
+
+1. Print [`assets/board.pdf`](assets/board.pdf) on A4 at **100% scale** (not "fit to page").
+2. Measure the black bar on the sheet: it must be exactly 50 mm, otherwise the print scale
+   is wrong.
+3. Lay the sheet flat on the turntable and put the object in its centre, inside the ring
+   of markers.
+4. Place the Kinect 60-70 cm from the object, tilted 30-40° down.
+
 ## Usage
 
 Step-by-step instructions will be added here once capturing from the Kinect is
-implemented. The one step that is ready is the marker sheet.
-
-Every command runs from the repository root with the virtual environment active
-(once per terminal):
-
-```bash
-cd KinectForge
-source .venv/bin/activate      # the prompt now starts with (.venv)
-python src/board.py --out board.png
-```
-
-Print `board.pdf` on A4 at **100% scale** (not "fit to page"), then measure the black bar
-on the sheet: it must be exactly 50 mm, otherwise the print scale is wrong.
-
-Planned setup: object in the centre of the sheet, Kinect 60-70 cm away tilted 30-40° down,
-one full turn in 30-60 s, hand on the outer edge of the turntable and out of frame.
+implemented.
 
 ## Configuration
 
 Board geometry, camera intrinsics, crop box and frame rejection thresholds are in
-`config/board.yaml`.
+`config/board.yaml`. If you change the board geometry, regenerate the sheet with
+`python src/board.py` (it overwrites `assets/board.pdf`) and print it again.
 
 ## Limitations
 

@@ -4,7 +4,7 @@ del foglio da stampare.
 Layout: un anello di marker lungo il bordo del foglio, centro libero per l'oggetto.
 Coordinate board in metri, origine al centro del foglio, z verso l'alto (vedi board.yaml).
 
-    python src/board.py --out board.png     # scrive board.png e board.pdf (da stampare)
+    python src/board.py      # rigenera assets/board.pdf (+ .png); serve solo se cambi board.yaml
 """
 import argparse
 from pathlib import Path
@@ -110,13 +110,14 @@ def render_sheet(cfg, px_per_mm):
 
 def main():
     ap = argparse.ArgumentParser(description="Genera il foglio ArUco da stampare (PNG + PDF).")
-    ap.add_argument("--out", default="board.png", help="PNG di uscita; accanto scrive il PDF")
+    ap.add_argument("--out", default=str(ROOT / "assets" / "board.png"), help="PNG di uscita; accanto scrive il PDF")
     ap.add_argument("--dpi", type=int, default=300)
     args = ap.parse_args()
 
     cfg = load_config()
     img = render_sheet(cfg, args.dpi / 25.4)
     out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
     cv.imwrite(str(out), img)
 
     from PIL import Image

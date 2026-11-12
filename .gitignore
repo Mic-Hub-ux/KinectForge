@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# KinectForge: dati di scansione e fogli generati restano fuori dal repo
+data/
+/board.png
+/board.pdf

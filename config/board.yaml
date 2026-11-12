@@ -1,0 +1,35 @@
+# KinectForge — configurazione condivisa da tutti gli script.
+#
+# Sistema "board" (= mondo della ricostruzione), unità in METRI:
+#   origine = centro del foglio
+#   x verso destra, y verso l'alto (guardando il foglio stampato dritto)
+#   z uscente dal foglio, cioè verso l'alto quando il foglio è sul piatto.
+
+board:
+  dictionary: DICT_4X4_50
+  page_mm: [210, 297]   # A4 verticale (larghezza, altezza)
+  margin_mm: 10         # bordo bianco per i margini non stampabili
+  marker_mm: 35         # lato del marker stampato (bordo nero compreso)
+  markers_x: 4          # marker nelle righe in alto e in basso
+  markers_y: 6          # marker nelle colonne a sinistra e a destra (angoli compresi)
+
+# Intrinseci Kinect v1 @ 640x480 (default, vedi CLAUDE.md §5.2)
+camera:
+  width: 640
+  height: 480
+  fx: 525.0
+  fy: 525.0
+  cx: 319.5
+  cy: 239.5
+
+# Box di ritaglio in coordinate board (metri)
+crop:
+  half_xy: 0.10         # ±10 cm attorno al centro del foglio
+  z_min: 0.003          # appena sopra il foglio: taglia via il piano
+  z_max: 0.20
+
+# Scarto frame in pose.py
+pose:
+  min_markers: 3
+  max_reproj_px: 2.0
+  min_depth_px: 300     # pixel depth validi che cadono dentro la box di crop

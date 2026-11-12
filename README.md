@@ -21,8 +21,7 @@ hardware side is not written yet.
 - [ ] Live viewer and capture from the Kinect (`viewer.py`, `capture.py`)
 - [ ] First real scan
 
-On synthetic data (a 50 mm radius sphere, 36 frames, 1 mm depth noise) the reconstructed
-radius is 50.1 ± 0.2 mm using poses estimated from the markers.
+Today you can run the full pipeline on synthetic data (see [Quick start](#quick-start-no-kinect-needed)).
 
 ## Hardware
 
@@ -51,46 +50,126 @@ radius is 50.1 ± 0.2 mm using poses estimated from the markers.
 
 The world frame is the sheet: origin at its centre, z pointing up.
 
-## Install
+## Installation
 
-Ubuntu/Debian:
+Tested on Ubuntu 24.04 with Python 3.12. Requirements: Python 3.10+, `git`, and the
+`python3-venv` package.
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/Mic-Hub-ux/KinectForge.git
+cd KinectForge
+```
+
+### 2. Create the virtual environment and install the Python libraries
+
+```bash
+sudo apt install -y python3-venv
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+This installs NumPy, OpenCV (with the ArUco module), Open3D, PyYAML and Pillow.
+`--system-site-packages` lets the venv see the Kinect driver installed via apt (step 4).
+
+### 3. Check the installation
+
+```bash
+python -c "import cv2, open3d, numpy; print('ok', cv2.__version__, open3d.__version__)"
+```
+
+It should print `ok` followed by the OpenCV and Open3D versions.
+
+### 4. Kinect driver (only needed for the hardware scripts, not yet implemented)
 
 ```bash
 sudo apt install -y freenect python3-freenect libfreenect-dev
-python3 -m venv --system-site-packages .venv   # system-site-packages: freenect comes from apt
-source .venv/bin/activate
-pip install -r requirements.txt
 ```
 
 For USB access without sudo, add a udev rule for the Kinect devices (vendor `045e`,
 products `02ae`, `02ad`, `02b0`) with `MODE="0666"`.
 
-## Usage
+## Quick start (no Kinect needed)
 
-Without a Kinect (synthetic data):
+This runs the whole pipeline on a synthetic scan: a virtual 5 cm radius sphere on the
+ArUco sheet, seen from 36 angles with Kinect-like noise. Run every command from the
+repository root with the venv active (`source .venv/bin/activate`).
 
 ```bash
-python src/board.py --out board.png                       # sheet to print (also board.pdf)
-python src/pose.py  --image photo_of_sheet.jpg            # pose test on a phone photo
-python src/fake_capture.py --scan test01 --shape sphere   # synthetic frames → data/raw/test01/
-python src/pose.py  --scan test01                         # marker poses → poses.npz
-python src/fuse.py  --scan test01                         # → data/meshes/test01_raw.ply
-python src/clean.py --scan test01                         # → data/meshes/test01.ply
+# 1. Generate 36 synthetic RGB + depth frames → data/raw/test01/
+python src/fake_capture.py --scan test01 --shape sphere
+
+# 2. Find the markers in each frame and compute the camera pose → data/raw/test01/poses.npz
+python src/pose.py --scan test01
+
+# 3. Fuse the frames into a mesh → data/meshes/test01_raw.ply
+python src/fuse.py --scan test01
+
+# 4. Remove noise fragments → data/meshes/test01.ply  (the final result)
+python src/clean.py --scan test01
 ```
 
-`fake_capture.py` writes ground-truth poses, so you can also skip `pose.py`; when you run it,
-it reports its error against the ground truth.
+Open `data/meshes/test01.ply` in Blender (*File → Import → Stanford PLY*) or MeshLab.
+You should see a coloured sphere with an open bottom. The bottom is open by design: it is
+closed by hand in Blender.
 
-With a Kinect (not implemented yet):
+Use `--shape cube` for an 8 cm cube instead of a sphere, and `clean.py --stl` to also
+write an STL file (without colour).
+
+## Testing
+
+There is no Kinect yet, so the pipeline is tested in two ways.
+
+### Synthetic scan: does the whole pipeline work?
+
+`fake_capture.py` renders the frames from a known object and known camera positions, so
+every step can be checked against the truth:
+
+- **`pose.py`** prints a line `Confronto con ground truth: ...`. This compares the camera
+  poses it estimated from the markers with the real ones. Expected: rotation error well
+  under 1°, camera position error a few mm.
+- **`fuse.py` / `clean.py`** print the size of the mesh (`ingombro`). Expected: about
+  10 x 10 cm in plan for the sphere (5 cm radius) and about 9 cm in height (the lowest
+  part of the sphere is hidden from the camera, so it is missing). For the cube: 10.3 x 10.3 cm (the diagonal of an
+  8 cm cube rotated by 20°) and about 7.8 cm in height.
+
+Our run with the sphere measured a radius of 50.1 ± 0.2 mm against the true 50 mm.
+
+### Real photo: does marker detection work on a printed sheet?
+
+```bash
+python src/board.py --out board.png
+```
+
+1. Print `board.pdf` on A4 at **100% scale** (not "fit to page").
+2. Measure the black bar on the sheet: it must be exactly 50 mm. If it isn't, the print
+   scale is wrong and every measurement will be too.
+3. Take a photo of the sheet at an angle with your phone and run:
+
+```bash
+python src/pose.py --image photo.jpg
+```
+
+Expected: most of the 16 markers found, reprojection error around 1 px or less, and a
+distance close to the real one. The phone's focal length is guessed, so the distance is only
+approximate; pass `--focal-px` if you know it. The script also saves `photo_pose.jpg` with
+the detected markers and the sheet's axes drawn on it. The blue axis (z) must point up
+out of the sheet.
+
+## Scanning with the Kinect (not implemented yet)
 
 ```bash
 python src/viewer.py                 # live RGB + depth
 python src/capture.py --scan obj01   # frames → data/raw/obj01/
-# then pose.py / fuse.py / clean.py as above with --scan obj01
+# then pose.py, fuse.py and clean.py as in the quick start, with --scan obj01
 ```
 
 Setup: object in the centre of the sheet, Kinect 60-70 cm away tilted 30-40° down, one
 full turn in 30-60 s, hand on the outer edge of the turntable and out of frame.
+
+## Configuration
 
 Board geometry, camera intrinsics, crop box and frame rejection thresholds are in
 `config/board.yaml`.

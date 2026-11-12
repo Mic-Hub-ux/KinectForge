@@ -11,17 +11,14 @@ closing the bottom, touch-ups and STL export for printing are done by hand in Bl
 
 ## Status
 
-Work in progress. The software pipeline is complete and tested on synthetic data; the
-hardware side is not written yet.
+Work in progress. The processing pipeline is written; capturing from the Kinect is not
+implemented yet, so the scanner cannot be used end-to-end yet.
 
 - [x] Printable ArUco sheet (`board.py`)
 - [x] Per-frame marker detection and pose estimation (`pose.py`)
-- [x] Synthetic RGB-D generator for testing without a Kinect (`fake_capture.py`)
 - [x] TSDF fusion (`fuse.py`) and mesh cleanup (`clean.py`)
 - [ ] Live viewer and capture from the Kinect (`viewer.py`, `capture.py`)
 - [ ] First real scan
-
-Today you can run the full pipeline on synthetic data (see [Quick start](#quick-start-no-kinect-needed)).
 
 ## Hardware
 
@@ -82,7 +79,7 @@ python -c "import cv2, open3d, numpy; print('ok', cv2.__version__, open3d.__vers
 
 It should print `ok` followed by the OpenCV and Open3D versions.
 
-### 4. Kinect driver (only needed for the hardware scripts, not yet implemented)
+### 4. Kinect driver
 
 ```bash
 sudo apt install -y freenect python3-freenect libfreenect-dev
@@ -91,83 +88,20 @@ sudo apt install -y freenect python3-freenect libfreenect-dev
 For USB access without sudo, add a udev rule for the Kinect devices (vendor `045e`,
 products `02ae`, `02ad`, `02b0`) with `MODE="0666"`.
 
-## Quick start (no Kinect needed)
+## Usage
 
-This runs the whole pipeline on a synthetic scan: a virtual 5 cm radius sphere on the
-ArUco sheet, seen from 36 angles with Kinect-like noise. Run every command from the
-repository root with the venv active (`source .venv/bin/activate`).
-
-```bash
-# 1. Generate 36 synthetic RGB + depth frames → data/raw/test01/
-python src/fake_capture.py --scan test01 --shape sphere
-
-# 2. Find the markers in each frame and compute the camera pose → data/raw/test01/poses.npz
-python src/pose.py --scan test01
-
-# 3. Fuse the frames into a mesh → data/meshes/test01_raw.ply
-python src/fuse.py --scan test01
-
-# 4. Remove noise fragments → data/meshes/test01.ply  (the final result)
-python src/clean.py --scan test01
-```
-
-Open `data/meshes/test01.ply` in Blender (*File → Import → Stanford PLY*) or MeshLab.
-You should see a coloured sphere with an open bottom. The bottom is open by design: it is
-closed by hand in Blender.
-
-Use `--shape cube` for an 8 cm cube instead of a sphere, and `clean.py --stl` to also
-write an STL file (without colour).
-
-## Testing
-
-There is no Kinect yet, so the pipeline is tested in two ways.
-
-### Synthetic scan: does the whole pipeline work?
-
-`fake_capture.py` renders the frames from a known object and known camera positions, so
-every step can be checked against the truth:
-
-- **`pose.py`** prints a line `Confronto con ground truth: ...`. This compares the camera
-  poses it estimated from the markers with the real ones. Expected: rotation error well
-  under 1°, camera position error a few mm.
-- **`fuse.py` / `clean.py`** print the size of the mesh (`ingombro`). Expected: about
-  10 x 10 cm in plan for the sphere (5 cm radius) and about 9 cm in height (the lowest
-  part of the sphere is hidden from the camera, so it is missing). For the cube: 10.3 x 10.3 cm (the diagonal of an
-  8 cm cube rotated by 20°) and about 7.8 cm in height.
-
-Our run with the sphere measured a radius of 50.1 ± 0.2 mm against the true 50 mm.
-
-### Real photo: does marker detection work on a printed sheet?
+Step-by-step instructions will be added here once capturing from the Kinect is
+implemented. The one step that is ready is the marker sheet:
 
 ```bash
 python src/board.py --out board.png
 ```
 
-1. Print `board.pdf` on A4 at **100% scale** (not "fit to page").
-2. Measure the black bar on the sheet: it must be exactly 50 mm. If it isn't, the print
-   scale is wrong and every measurement will be too.
-3. Take a photo of the sheet at an angle with your phone and run:
+Print `board.pdf` on A4 at **100% scale** (not "fit to page"), then measure the black bar
+on the sheet: it must be exactly 50 mm, otherwise the print scale is wrong.
 
-```bash
-python src/pose.py --image photo.jpg
-```
-
-Expected: most of the 16 markers found, reprojection error around 1 px or less, and a
-distance close to the real one. The phone's focal length is guessed, so the distance is only
-approximate; pass `--focal-px` if you know it. The script also saves `photo_pose.jpg` with
-the detected markers and the sheet's axes drawn on it. The blue axis (z) must point up
-out of the sheet.
-
-## Scanning with the Kinect (not implemented yet)
-
-```bash
-python src/viewer.py                 # live RGB + depth
-python src/capture.py --scan obj01   # frames → data/raw/obj01/
-# then pose.py, fuse.py and clean.py as in the quick start, with --scan obj01
-```
-
-Setup: object in the centre of the sheet, Kinect 60-70 cm away tilted 30-40° down, one
-full turn in 30-60 s, hand on the outer edge of the turntable and out of frame.
+Planned setup: object in the centre of the sheet, Kinect 60-70 cm away tilted 30-40° down,
+one full turn in 30-60 s, hand on the outer edge of the turntable and out of frame.
 
 ## Configuration
 

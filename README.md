@@ -91,9 +91,14 @@ products `02ae`, `02ad`, `02b0`) with `MODE="0666"`.
 ## Usage
 
 Step-by-step instructions will be added here once capturing from the Kinect is
-implemented. The one step that is ready is the marker sheet:
+implemented. The one step that is ready is the marker sheet.
+
+Every command runs from the repository root with the virtual environment active
+(once per terminal):
 
 ```bash
+cd KinectForge
+source .venv/bin/activate      # the prompt now starts with (.venv)
 python src/board.py --out board.png
 ```
 

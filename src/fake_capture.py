@@ -8,7 +8,7 @@ gira attorno (equivalente al piatto che gira con il Kinect fermo).
 
 Scrive in data/raw/<scan_id>/:
     rgb/000001.png     RGB 640x480
-    depth/000001.png   uint16, mm, 0 = nessuna misura (rumore ~1 mm)
+    depth/000001.png   uint16, mm, 0 = nessuna misura (rumore ~1 mm + pixel spuri)
     poses.npz          pose vere (stesso formato di pose.py)
     poses_gt.npz       copia delle pose vere: pose.py la usa per misurare il proprio errore
 """
@@ -51,7 +51,7 @@ def look_at(eye, target):
     return T
 
 
-def render(scene, obj_id, T, K, w, h, sheet_tex, sheet_mm, rng):
+def render(scene, obj_id, T, K, w, h, sheet_tex, sheet_mm, rng, outliers):
     """Raycasting di un frame. Ritorna (rgb uint8 HxWx3, depth uint16 mm)."""
     R, t = T[:3, :3], T[:3, 3]
     u, v = np.meshgrid(np.arange(w), np.arange(h))
@@ -88,6 +88,9 @@ def render(scene, obj_id, T, K, w, h, sheet_tex, sheet_mm, rng):
     rgb = np.clip(rgb + rng.normal(0, 2, rgb.shape), 0, 255).astype(np.uint8)
 
     depth = np.where(valid, z * 1000 + rng.normal(0, 1.0, z.shape), 0)
+    # "flying pixel" del Kinect: misure spurie sparse davanti alla scena
+    fly = rng.random(z.shape) < outliers
+    depth[fly] = rng.uniform(500, 1000, fly.sum())
     return rgb, np.round(depth).astype(np.uint16)
 
 
@@ -98,6 +101,7 @@ def main():
     ap.add_argument("--frames", type=int, default=36, help="frame su un giro completo")
     ap.add_argument("--distance", type=float, default=0.65, help="camera-centro foglio, m")
     ap.add_argument("--elevation", type=float, default=35, help="inclinazione camera, gradi")
+    ap.add_argument("--outliers", type=float, default=0.002, help="frazione di pixel depth spuri")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
 
@@ -127,7 +131,7 @@ def main():
         az = 2 * np.pi * i / args.frames
         eye = target + args.distance * np.array([np.cos(el) * np.cos(az), np.cos(el) * np.sin(az), np.sin(el)])
         T = look_at(eye, target)
-        rgb, depth = render(scene, obj_id, T, K, w, h, sheet_tex, sheet_mm, rng)
+        rgb, depth = render(scene, obj_id, T, K, w, h, sheet_tex, sheet_mm, rng, args.outliers)
         name = f"{i + 1:06d}"
         cv.imwrite(str(out / "rgb" / f"{name}.png"), cv.cvtColor(rgb, cv.COLOR_RGB2BGR))
         cv.imwrite(str(out / "depth" / f"{name}.png"), depth)

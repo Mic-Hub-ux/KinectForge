@@ -17,6 +17,12 @@ import numpy as np
 from board import DATA_DIR, camera_matrix, crop_bounds, load_config, make_board
 
 
+def make_detector(board):
+    params = cv.aruco.DetectorParameters()
+    params.cornerRefinementMethod = cv.aruco.CORNER_REFINE_SUBPIX   # angoli sub-pixel: pose più stabili
+    return cv.aruco.ArucoDetector(board.getDictionary(), params)
+
+
 def estimate_pose(gray, board, detector, K):
     """Posa del foglio in un'immagine. Ritorna dict con T (4x4 o None), n_markers, reproj (px)."""
     corners, ids, _ = detector.detectMarkers(gray)
@@ -76,7 +82,7 @@ def run_image(path, cfg, focal_px, save):
               f"(distanza indicativa ±10-20%, usa --focal-px se la conosci)")
 
     board = make_board(cfg)
-    detector = cv.aruco.ArucoDetector(board.getDictionary(), cv.aruco.DetectorParameters())
+    detector = make_detector(board)
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     res = estimate_pose(gray, board, detector, K)
     print(f"Marker trovati: {res['n_markers']}" +
@@ -105,7 +111,7 @@ def run_scan(scan, cfg):
     lo, hi = crop_bounds(cfg)
     pc = cfg["pose"]
     board = make_board(cfg)
-    detector = cv.aruco.ArucoDetector(board.getDictionary(), cv.aruco.DetectorParameters())
+    detector = make_detector(board)
 
     kept_ids, kept_T = [], []
     rejected = {"marker": 0, "reproj": 0, "depth": 0}

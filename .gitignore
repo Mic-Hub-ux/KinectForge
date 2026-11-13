@@ -221,3 +221,7 @@ __marimo__/
 
 # KinectForge: i dati di scansione restano fuori dal repo
 data/
+
+# Scansioni finite (PLY/STL): restano in locale, solo la cartella è nel repo
+scanned_models/*
+!scanned_models/.gitkeep

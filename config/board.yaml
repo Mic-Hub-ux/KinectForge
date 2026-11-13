@@ -33,3 +33,15 @@ pose:
   min_markers: 3
   max_reproj_px: 2.0
   min_depth_px: 300     # pixel depth validi che cadono dentro la box di crop
+
+# Controlli di setup (viewer.py / capture.py): range "verde" per partire
+setup:
+  dist_cm: [55, 75]     # camera → centro foglio (obiettivo 60-70)
+  tilt_deg: [25, 45]    # inclinazione verso il basso (obiettivo 30-40)
+
+# Registrazione in capture.py
+capture:
+  hold_s: 2.0           # setup tutto verde per tot secondi...
+  countdown_s: 3        # ...poi conto alla rovescia e parte
+  step_deg: 3.0         # salva un frame ogni tot gradi di rotazione del piatto
+  stop_deg: 370         # si ferma da solo dopo un giro (+10° di sovrapposizione)

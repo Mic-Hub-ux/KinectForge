@@ -16,6 +16,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config" / "board.yaml"
 DATA_DIR = ROOT / "data"
+OUTPUT_DIR = ROOT / "scanned_models"   # PLY finali (consegna), uno per scansione
 
 
 def load_config(path=CONFIG_PATH):

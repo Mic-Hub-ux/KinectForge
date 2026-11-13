@@ -1,7 +1,7 @@
 """Pulisce la mesh grezza di fuse.py e scrive il PLY di consegna. Qui lo scanner finisce.
 
-    python src/clean.py --scan test01          # data/meshes/test01_raw.ply → data/meshes/test01.ply
-    python src/clean.py --scan test01 --stl    # (opz.) anche test01.stl, senza colore
+    python src/clean.py --scan test01          # data/meshes/test01_raw.ply → scanned_models/test01.ply
+    python src/clean.py --scan test01 --stl    # (opz.) anche scanned_models/test01.stl, senza colore
 
 Toglie frammenti staccati e triangoli rotti. NON rende la mesh watertight e NON chiude
 il fondo: quello si fa a mano in Blender.
@@ -12,7 +12,7 @@ import sys
 import numpy as np
 import open3d as o3d
 
-from board import DATA_DIR
+from board import DATA_DIR, OUTPUT_DIR
 
 
 def main():
@@ -46,7 +46,8 @@ def main():
         mesh = mesh.filter_smooth_taubin(number_of_iterations=args.smooth)
     mesh.compute_vertex_normals()
 
-    out = DATA_DIR / "meshes" / f"{args.scan}.ply"
+    OUTPUT_DIR.mkdir(exist_ok=True)
+    out = OUTPUT_DIR / f"{args.scan}.ply"
     o3d.io.write_triangle_mesh(str(out), mesh)
     ext = mesh.get_axis_aligned_bounding_box().get_extent() * 100
     print(f"Pezzi: {len(cluster_size)} trovati, {keep.sum()} tenuti. "

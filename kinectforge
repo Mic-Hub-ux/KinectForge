@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# KinectForge launcher: setup, tilt, scan and save in one app.
+# Usage: ./kinectforge [--scan NAME] [--overwrite] [--no-process] [--replay SCAN]
+set -e
+cd "$(dirname "$(readlink -f "$0")")"
+if [ ! -x .venv/bin/python ]; then
+    echo "Virtual environment not found: follow the Installation steps in README.md first." >&2
+    exit 1
+fi
+exec .venv/bin/python src/capture.py "$@"
